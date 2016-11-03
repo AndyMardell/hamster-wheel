@@ -23,11 +23,13 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Variables
 int revolutions;
 int rpm;
-unsigned long speedMph;
+float speedCmPm;
+float milesPerHour;
 unsigned long timeold;
 
 // Option Variables
-const int radius = 0.5; // Radius of wheel in feet
+const int radius = 7; // Radius of wheel in cm
+const int circumference = 2 * (3.14159265359 * radius);
 const int hallPin = 5; // Hall Effect Sensor on Pin D1
 const int buttonPin = 4;
 int screen = 1; // Screen 1 or 2
@@ -55,7 +57,6 @@ void setup() {
   revolutions = 0;
   rpm = 0;
   timeold = 0;
-  speedMph = 0;
 
   if (logging) {
     Serial.println("Setup Complete");
@@ -90,7 +91,7 @@ void magnetDetect() {
     Serial.println(")");
   }
 
-  delay(150);
+  delay(50);
 }
 
 // Calculate RPM
@@ -107,11 +108,13 @@ void calculateRpm() {
 
 // Calculate Speed
 void calculateSpeed() {
-  speedMph = (radius * 3.14159265359) * rpm * 60 / 5280; // Speed in MPH (r*pi*rpm*60/5280)
+
+  speedCmPm = circumference * rpm; // cm per minute
+  milesPerHour = speedCmPm * 0.000372823; // cm per min to mph
 
   if (logging) {
     Serial.print("Speed: ");
-    Serial.println(speedMph); 
+    Serial.println(milesPerHour); 
   }
 }
 
