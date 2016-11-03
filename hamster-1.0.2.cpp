@@ -21,9 +21,13 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Variables
-volatile byte revolutions;
-unsigned int rpm;
+int revolutions;
+int rpm;
+unsigned long speed;
 unsigned long timeold;
+
+// Option Variables
+const int radius = 0.01; // Radius in metres
 const int hallPin = 5; // Hall Effect Sensor on Pin D1
 const int buttonPin = 4;
 const int screen = 1; // Screen 1 or 2
@@ -44,30 +48,23 @@ void setup() {
   // Attach interupt to button, call changeDisplay()
   attachInterrupt(buttonPin, changeDisplay, RISING);
 
-  // Set up display one
+  // Set up display
   setupDisplayOne();
 
   // Reset vars
   revolutions = 0;
   rpm = 0;
   timeold = 0;
-  
+  speed = 0;
 }
 
 // Main Program
 void loop() {
 
+  // Every n revs
   if (revolutions >= 20) { 
-    
-    // Calculate RPM
-    rpm = 30*1000/(millis() - timeold)*revolutions;
-    timeold = millis();
-    revolutions = 0;
-    
-    if (debugging) {
-      Serial.println(rpm,DEC); 
-    }
-    
+    calculateRpm();
+    calculateSpeed();
   }
 
   // Update Display
@@ -76,11 +73,9 @@ void loop() {
   } else {
     updateDisplayTwo();
   }
-  
-  
 }
 
-//This function is called whenever a magnet/interrupt is detected by the arduino
+// Magnet interrupt function
 void magnetDetect() {
 
   if (logging) {
@@ -88,10 +83,9 @@ void magnetDetect() {
   }
 
   revolutions++;
-  
 }
 
-// Change Display
+// Change Display interrupt function
 void changeDisplay() {
 
   if (screen == 1) {
@@ -101,7 +95,29 @@ void changeDisplay() {
     setupDisplayOne();
     screen = 1;
   }
+}
 
+// Calculate RPM
+void calculateRpm() {
+  rpm = 30 * 1000 / (millis() - timeold) * revolutions;
+  timeold = millis();
+  revolutions = 0;
+  
+  if (debugging) {
+    Serial.println('RPM: ');
+    Serial.print(rpm); 
+  }
+}
+
+// Calculate Speed
+void calculateSpeed() {
+  speedms = radius * rpm * 0.10472; // Speed in m/s (v=r*rpm*0.10472)
+  speed = speedms * 2.2369; // Speed in MPH (mph=ms*2.2369)
+
+  if (debugging) {
+    Serial.println('Speed: ');
+    Serial.print(speed); 
+  }
 }
 
 // Setup display one
@@ -154,7 +170,6 @@ void updateDisplayOne() {
   // Update Top Speed
   lcd.setCursor(12, 1);
   lcd.print('0');
-  
 }
 
 // Update display two
@@ -171,5 +186,4 @@ void updateDisplayOne() {
   // Update Total Dist
   lcd.setCursor(13, 1);
   lcd.print('0');
-  
 }
