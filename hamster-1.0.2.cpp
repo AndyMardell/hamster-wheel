@@ -23,17 +23,17 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // Variables
 int revolutions;
 int rpm;
-unsigned long speed;
+unsigned long speedMph;
 unsigned long timeold;
 
 // Option Variables
-const int radius = 0.01; // Radius in metres
+const int radius = 0.5; // Radius of wheel in feet
 const int hallPin = 5; // Hall Effect Sensor on Pin D1
 const int buttonPin = 4;
-const int screen = 1; // Screen 1 or 2
+int screen = 1; // Screen 1 or 2
 
 // Debugging
-const int debugging = 1;
+const int debugging = 0;
 const int logging = 1;
 
 // Setup
@@ -55,7 +55,11 @@ void setup() {
   revolutions = 0;
   rpm = 0;
   timeold = 0;
-  speed = 0;
+  speedMph = 0;
+
+  if (logging) {
+    Serial.println("Setup Complete");
+  }
 }
 
 // Main Program
@@ -78,23 +82,15 @@ void loop() {
 // Magnet interrupt function
 void magnetDetect() {
 
-  if (logging) {
-    Serial.println("Detected");
-  }
-
   revolutions++;
-}
 
-// Change Display interrupt function
-void changeDisplay() {
-
-  if (screen == 1) {
-    setupDisplayTwo();
-    screen = 2;
-  } else {
-    setupDisplayOne();
-    screen = 1;
+  if (logging) {
+    Serial.print("Detected (");
+    Serial.print(revolutions);
+    Serial.println(")");
   }
+
+  delay(150);
 }
 
 // Calculate RPM
@@ -103,20 +99,35 @@ void calculateRpm() {
   timeold = millis();
   revolutions = 0;
   
-  if (debugging) {
-    Serial.println('RPM: ');
-    Serial.print(rpm); 
+  if (logging) {
+    Serial.print("RPM: ");
+    Serial.println(rpm); 
   }
 }
 
 // Calculate Speed
 void calculateSpeed() {
-  speedms = radius * rpm * 0.10472; // Speed in m/s (v=r*rpm*0.10472)
-  speed = speedms * 2.2369; // Speed in MPH (mph=ms*2.2369)
+  speedMph = (radius * 3.14159265359) * rpm * 60 / 5280; // Speed in MPH (r*pi*rpm*60/5280)
 
-  if (debugging) {
-    Serial.println('Speed: ');
-    Serial.print(speed); 
+  if (logging) {
+    Serial.print("Speed: ");
+    Serial.println(speedMph); 
+  }
+}
+
+// Change Display interrupt function
+void changeDisplay() {
+
+  if (logging) {
+    Serial.println("Function Called: changeDisplay()");
+  }
+
+  if (screen == 1) {
+    setupDisplayTwo();
+    screen = 2;
+  } else {
+    setupDisplayOne();
+    screen = 1;
   }
 }
 
@@ -173,7 +184,7 @@ void updateDisplayOne() {
 }
 
 // Update display two
-void updateDisplayOne() {
+void updateDisplayTwo() {
 
   if (debugging) {
     Serial.println("Function Called: updateDisplayOne()");
